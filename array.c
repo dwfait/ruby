@@ -4275,14 +4275,20 @@ rb_ary_equal(VALUE ary1, VALUE ary2)
 static VALUE
 recursive_eql(VALUE ary1, VALUE ary2, int recur)
 {
-    long i;
+  long i;
+  VALUE p1, p2;
 
-    if (recur) return Qtrue; /* Subtle! */
-    for (i=0; i<RARRAY_LEN(ary1); i++) {
-	if (!rb_eql(rb_ary_elt(ary1, i), rb_ary_elt(ary2, i)))
-	    return Qfalse;
+  if (recur) return Qtrue; /* Subtle! */
+
+  for (i=0; i<RARRAY_LEN(ary1); i++) {
+    p1 = rb_ary_elt(ary1, i);
+    p2 = rb_ary_elt(ary2, i);
+    if ((!SPECIAL_CONST_P(p1)) || (p1 != p2)) {
+      if (!rb_eql(p1, p2))
+        return Qfalse;
     }
-    return Qtrue;
+  }
+  return Qtrue;
 }
 
 /*

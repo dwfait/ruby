@@ -821,6 +821,21 @@ class TestArray < Test::Unit::TestCase
     assert_not_send([@cls[1.0, 1.0, 2.0, 2.0], :eql?, @cls[1, 1, 2, 2]])
   end
 
+  C = Array.new(3, &:to_s)
+  D = C.dup
+
+  def test_eql_resize
+    o = Object.new
+    def o.eql?(o)
+      C.clear
+      D.clear
+      true
+    end
+    C[1] = o
+    assert_send([C, :eql?, D])
+  end
+
+
   def test_fill
     assert_equal(@cls[],   @cls[].fill(99))
     assert_equal(@cls[],   @cls[].fill(99, 0))
