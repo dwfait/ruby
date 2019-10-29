@@ -4275,6 +4275,19 @@ rb_ary_equal(VALUE ary1, VALUE ary2)
 static VALUE
 recursive_eql(VALUE ary1, VALUE ary2, int recur)
 {
+    long i;
+
+    if (recur) return Qtrue; /* Subtle! */
+    for (i=0; i<RARRAY_LEN(ary1); i++) {
+	if (!rb_eql(rb_ary_elt(ary1, i), rb_ary_elt(ary2, i)))
+	    return Qfalse;
+    }
+    return Qtrue;
+}
+
+static VALUE
+new_recursive_eql(VALUE ary1, VALUE ary2, int recur)
+{
     long i, len;
     const VALUE *p1, *p2;
 
@@ -4293,6 +4306,24 @@ recursive_eql(VALUE ary1, VALUE ary2, int recur)
 	p2++;
     }
     return Qtrue;
+}
+
+/*
+ *  call-seq:
+ *     ary.eql?(other)  -> true or false
+ *
+ *  Returns +true+ if +self+ and +other+ are the same object,
+ *  or are both arrays with the same content (according to Object#eql?).
+ */
+
+static VALUE
+rb_ary_new_eql(VALUE ary1, VALUE ary2)
+{
+    if (ary1 == ary2) return Qtrue;
+    if (!RB_TYPE_P(ary2, T_ARRAY)) return Qfalse;
+    if (RARRAY_LEN(ary1) != RARRAY_LEN(ary2)) return Qfalse;
+    if (RARRAY_CONST_PTR_TRANSIENT(ary1) == RARRAY_CONST_PTR_TRANSIENT(ary2)) return Qtrue;
+    return rb_exec_recursive_paired(new_recursive_eql, ary1, ary2, ary2);
 }
 
 /*
@@ -6957,6 +6988,7 @@ Init_Array(void)
 
     rb_define_method(rb_cArray, "==", rb_ary_equal, 1);
     rb_define_method(rb_cArray, "eql?", rb_ary_eql, 1);
+    rb_define_method(rb_cArray, "new_eql?", rb_ary_new_eql, 1);
     rb_define_method(rb_cArray, "hash", rb_ary_hash, 0);
 
     rb_define_method(rb_cArray, "[]", rb_ary_aref, -1);
